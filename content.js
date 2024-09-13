@@ -136,7 +136,7 @@ function hideNotification() {
 
 function openInAppleMaps(location) {
   console.log("Opening in Apple Maps:", location);
-  let url = 'https://beta.maps.apple.com/?';
+  let url = 'https://maps.apple.com/?q';
 
   const parts = [];
 
