@@ -8,6 +8,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Message received:", request);
   if (request.action === "showNotification") {
     extractLocationAndShowNotification();
+  } else if (request.action === "openAppleMapsInApp") {
+    openAppleMapsInApp(request.appUrl, request.fallbackUrl);
   }
 });
 
@@ -66,7 +68,6 @@ function getLocationFromGoogleMaps() {
   return result;
 }
 
-
 function showNotification(location) {
   chrome.storage.sync.get(['notificationDuration', 'autodetectEnabled'], (result) => {
     console.log("Storage result:", result);
@@ -83,8 +84,9 @@ function showNotification(location) {
     notification.id = 'apple-maps-notification';
     notification.innerHTML = `
       <div class="notification-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="icon">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        <!-- SVG icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffffff" class="icon">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
         </svg>
       </div>
       <div class="notification-text">
@@ -92,8 +94,9 @@ function showNotification(location) {
         <p class="notification-body">${displayName}</p>
       </div>
       <button id="closeNotification" class="close-button">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="close-icon">
-          <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+        <!-- Close icon SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#999999" class="close-icon">
+          <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
         </svg>
       </button>
       <div class="notification-actions">
@@ -136,52 +139,96 @@ function hideNotification() {
 
 function openInAppleMaps(location) {
   console.log("Opening in Apple Maps:", location);
-  let url = 'https://maps.apple.com/?q';
+  chrome.storage.sync.get(['openInApp'], (result) => {
+    if (result.openInApp) {
+      // Construct URLs for the app and the web
+      const appUrl = constructAppleMapsAppURL(location);
+      const fallbackUrl = constructAppleMapsWebURL(location);
 
-  const parts = [];
+      // Open the app with fallback to web
+      openAppleMapsInApp(appUrl, fallbackUrl);
+      hideNotification();
+    } else {
+      // Construct URL for the Apple Maps website
+      const url = constructAppleMapsWebURL(location);
+      console.log("Constructed Apple Maps URL:", url);
 
-  // Add address if available
-  if (location.address) {
-    // Remove non-printable characters, trim, and add ", United States"
-    const cleanAddress = location.address.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim() + ", United States";
-    parts.push(`address=${encodeURIComponent(cleanAddress)}`);
-  }
+      // Send message to the background script to open the URL
+      chrome.runtime.sendMessage({ action: "openAppleMaps", url: url }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Error sending message:", chrome.runtime.lastError);
+        } else {
+          console.log("Message sent successfully", response);
+        }
+      });
+      hideNotification();
+    }
+  });
+}
 
-  // Add a placeholder auid (you may want to generate this dynamically if possible)
-  parts.push('auid=12854371437431820590');
+function openAppleMapsInApp(appUrl, fallbackUrl) {
+  console.log("Attempting to open Apple Maps app with URL:", appUrl);
+
+  // Create an invisible iframe to open the custom URL scheme
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = appUrl;
+  document.body.appendChild(iframe);
+
+  // Set a timeout to redirect to the fallback URL if the app doesn't open
+  const timeoutDuration = 1500; // Time in milliseconds
+  const fallbackTimeout = setTimeout(() => {
+    console.log("Apple Maps app did not open, redirecting to fallback URL");
+    window.location.href = fallbackUrl;
+    document.body.removeChild(iframe);
+  }, timeoutDuration);
+
+  // Clean up the iframe after a longer delay
+  setTimeout(() => {
+    clearTimeout(fallbackTimeout);
+    if (iframe.parentNode) {
+      document.body.removeChild(iframe);
+    }
+  }, timeoutDuration + 500);
+}
+
+function constructAppleMapsAppURL(location) {
+  let url = 'maps://?';
+  const params = [];
 
   // Add coordinates if available
   if (location.type === 'coordinates' && location.lat && location.lng) {
-    parts.push(`ll=${location.lat},${location.lng}`);
+    params.push(`ll=${location.lat},${location.lng}`);
   }
 
-  // Add lsp parameter
-  parts.push('lsp=9902');
-
-  // Add the query parameter last, with the place name from the URL
+  // Add query if available
   if (location.name && location.name !== "Current location") {
-    // Remove non-printable characters, trim, and capitalize words
-    const cleanName = location.name.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim()
-      .replace(/\w\S*/g, (w) => (w.replace(/^\w/, (c) => c.toUpperCase())));
-    parts.push(`q=${encodeURIComponent(cleanName)}`);
-  } else {
-    parts.push('q=Dropped+Pin');
+    const cleanName = location.name.trim();
+    params.push(`q=${encodeURIComponent(cleanName)}`);
   }
 
-  url += parts.join('&');
-
-  console.log("Constructed Apple Maps URL:", url);
-
-  chrome.runtime.sendMessage({ action: "openAppleMaps", url: url }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error("Error sending message:", chrome.runtime.lastError);
-    } else {
-      console.log("Message sent successfully", response);
-    }
-  });
-  hideNotification();
+  url += params.join('&');
+  return url;
 }
 
+function constructAppleMapsWebURL(location) {
+  let url = 'https://maps.apple.com/?';
+  const params = [];
+
+  // Add coordinates if available
+  if (location.type === 'coordinates' && location.lat && location.lng) {
+    params.push(`ll=${location.lat},${location.lng}`);
+  }
+
+  // Add query if available
+  if (location.name && location.name !== "Current location") {
+    const cleanName = location.name.trim();
+    params.push(`q=${encodeURIComponent(cleanName)}`);
+  }
+
+  url += params.join('&');
+  return url;
+}
 
 function animateProgress(duration) {
   const progress = document.querySelector('#apple-maps-notification .progress');
