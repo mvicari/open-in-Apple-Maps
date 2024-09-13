@@ -21,11 +21,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         const appUrl = `maps://?q=${query}`;
         const fallbackUrl = `https://maps.apple.com/?q=${query}`;
 
-        // Send a message to the content script to open the URL with fallback
-        chrome.tabs.sendMessage(tab.id, {
-          action: "openAppleMapsInApp",
-          appUrl: appUrl,
-          fallbackUrl: fallbackUrl
+        // Inject code into the page to handle opening the app with fallback
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: openAppleMapsInAppInjected,
+          args: [appUrl, fallbackUrl]
         });
       } else {
         // Open the Apple Maps website
@@ -35,6 +35,34 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     });
   }
 });
+
+// Define the function to be injected
+function openAppleMapsInAppInjected(appUrl, fallbackUrl) {
+  // Function body similar to openAppleMapsInApp in content.js
+  console.log("Attempting to open Apple Maps app with URL:", appUrl);
+
+  // Create an invisible iframe to open the custom URL scheme
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = appUrl;
+  document.body.appendChild(iframe);
+
+  // Set a timeout to redirect to the fallback URL if the app doesn't open
+  const timeoutDuration = 1500; // Time in milliseconds
+  const fallbackTimeout = setTimeout(() => {
+    console.log("Apple Maps app did not open, redirecting to fallback URL");
+    window.location.href = fallbackUrl;
+    document.body.removeChild(iframe);
+  }, timeoutDuration);
+
+  // Clean up the iframe after a longer delay
+  setTimeout(() => {
+    clearTimeout(fallbackTimeout);
+    if (iframe.parentNode) {
+      document.body.removeChild(iframe);
+    }
+  }, timeoutDuration + 500);
+}
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (
@@ -62,11 +90,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Construct the fallback URL
       const fallbackUrl = request.fallbackUrl || request.url.replace('maps://', 'https://maps.apple.com/');
 
-      // Send a message back to the content script to handle opening the URL with fallback
-      chrome.tabs.sendMessage(sender.tab.id, {
-        action: "openAppleMapsInApp",
-        appUrl: request.url,
-        fallbackUrl: fallbackUrl
+      // Inject code into the page to handle opening the app with fallback
+      chrome.scripting.executeScript({
+        target: { tabId: sender.tab.id },
+        func: openAppleMapsInAppInjected,
+        args: [request.url, fallbackUrl]
       });
     } else {
       // Open the URL in a new tab (Apple Maps website)
