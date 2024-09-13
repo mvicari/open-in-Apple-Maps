@@ -140,20 +140,20 @@ function hideNotification() {
 function openInAppleMaps(location) {
   console.log("Opening in Apple Maps:", location);
   chrome.storage.sync.get(['openInApp'], (result) => {
-    if (result.openInApp) {
+    const openInApp = result.openInApp !== false; // Default to true
+    if (openInApp) {
       // Construct URLs for the app and the web
       const appUrl = constructAppleMapsAppURL(location);
       const fallbackUrl = constructAppleMapsWebURL(location);
 
       // Open the app with fallback to web
       openAppleMapsInApp(appUrl, fallbackUrl);
-      hideNotification();
     } else {
-      // Construct URL for the Apple Maps website
-      const url = constructAppleMapsWebURL(location);
+      // Construct URL for the Apple Maps web version (beta)
+      const url = constructAppleMapsWebURL(location, true); // Pass 'true' to indicate beta
       console.log("Constructed Apple Maps URL:", url);
 
-      // Send message to the background script to open the URL
+      // Open the URL in a new tab
       chrome.runtime.sendMessage({ action: "openAppleMaps", url: url }, (response) => {
         if (chrome.runtime.lastError) {
           console.error("Error sending message:", chrome.runtime.lastError);
@@ -161,8 +161,8 @@ function openInAppleMaps(location) {
           console.log("Message sent successfully", response);
         }
       });
-      hideNotification();
     }
+    hideNotification();
   });
 }
 
@@ -211,8 +211,8 @@ function constructAppleMapsAppURL(location) {
   return url;
 }
 
-function constructAppleMapsWebURL(location) {
-  let url = 'https://maps.apple.com/?';
+function constructAppleMapsWebURL(location, useBeta = false) {
+  let url = useBeta ? 'https://beta.maps.apple.com/?' : 'https://maps.apple.com/?';
   const params = [];
 
   // Add coordinates if available
