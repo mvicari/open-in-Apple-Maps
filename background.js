@@ -16,7 +16,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     // Retrieve the user's preference for opening in app or website
     chrome.storage.sync.get(['openInApp'], (result) => {
-      if (result.openInApp) {
+      const openInApp = result.openInApp !== false; // Default to true
+      if (openInApp) {
         // Use the Apple Maps URL scheme and construct the fallback URL
         const appUrl = `maps://?q=${query}`;
         const fallbackUrl = `https://maps.apple.com/?q=${query}`;
@@ -28,8 +29,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
           args: [appUrl, fallbackUrl]
         });
       } else {
-        // Open the Apple Maps website
-        const url = `https://maps.apple.com/?q=${query}`;
+        // Open the Apple Maps beta website
+        const url = `https://beta.maps.apple.com/?q=${query}`;
         chrome.tabs.create({ url: url });
       }
     });
