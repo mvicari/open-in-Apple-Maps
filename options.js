@@ -5,12 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveButton = document.getElementById('save');
   const status = document.getElementById('status');
 
-  // Load saved options
-  chrome.storage.sync.get(['notificationDuration', 'autodetectEnabled', 'openInApp'], (result) => {
-    durationInput.value = result.notificationDuration || 5;
-    autodetectCheckbox.checked = result.autodetectEnabled !== false;
-    openInAppCheckbox.checked = result.openInApp || false;
-  });
+// Load saved options
+chrome.storage.sync.get(['notificationDuration', 'autodetectEnabled', 'openInApp'], (result) => {
+  durationInput.value = result.notificationDuration || 5;
+  autodetectCheckbox.checked = result.autodetectEnabled !== false;
+  openInAppCheckbox.checked = result.openInApp !== false; // Default to true
+});
 
   // Save options
   saveButton.addEventListener('click', () => {
