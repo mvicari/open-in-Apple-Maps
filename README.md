@@ -29,9 +29,8 @@ This forked version is **not** available on the Chrome Web Store. To use the ext
 
    - **Clone the Repository:**
      ```bash
-     git clone https://github.com/yourusername/open-in-Apple-Maps-fork.git
+     git clone https://github.com/mvicari/open-in-Apple-Maps.git
      ```
-     Replace `yourusername` with your actual GitHub username.
 
    - **Or Download as ZIP:**
      - Go to the [GitHub repository](https://github.com/yourusername/open-in-Apple-Maps-fork).
