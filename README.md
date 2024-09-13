@@ -21,25 +21,40 @@ A browser extension that prompts to open Google Maps links in Apple Maps and pro
 
 ### Note
 
-This forked version is **not** available on the Chrome Web Store. Installation must be done manually.
+This forked version is **not** available on the Chrome Web Store. To use the extension, it must be **sideloaded** into your browser manually.
 
-### Manual Installation
+### Manual Installation (Sideloading)
 
 1. **Download the Extension Files:**
 
-   Download the extension files from the [GitHub repository](https://github.com/yourusername/open-in-Apple-Maps-fork/releases).
+   - **Clone the Repository:**
+     ```bash
+     git clone https://github.com/yourusername/open-in-Apple-Maps-fork.git
+     ```
+     Replace `yourusername` with your actual GitHub username.
+
+   - **Or Download as ZIP:**
+     - Go to the [GitHub repository](https://github.com/yourusername/open-in-Apple-Maps-fork).
+     - Click the "Code" button and select "Download ZIP".
+     - Extract the downloaded ZIP file to a desired location on your computer.
 
 2. **Open Chrome Extensions Page:**
 
-   Navigate to `chrome://extensions/` in your Chrome browser.
+   - Open Google Chrome and navigate to `chrome://extensions/`.
 
 3. **Enable Developer Mode:**
 
-   Toggle the "Developer mode" switch in the top right corner.
+   - Toggle the "Developer mode" switch in the top right corner of the page.
 
 4. **Load Unpacked Extension:**
 
-   Click on the "Load unpacked" button and select the directory where you downloaded the extension files.
+   - Click on the "Load unpacked" button.
+   - Select the directory where you downloaded or cloned the extension files (e.g., the folder containing `manifest.json`).
+
+5. **Verify Installation:**
+
+   - The extension should now appear in your list of installed extensions.
+   - Ensure that it's enabled and functioning as expected.
 
 ## Usage
 
@@ -74,7 +89,7 @@ Customize the extension's behavior via the options page.
 
 3. **Save Settings:**
 
-   Click the "Save" button to apply your changes.
+   - Click the "Save" button to apply your changes.
 
 ## Contributing
 
