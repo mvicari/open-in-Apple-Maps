@@ -6,11 +6,13 @@
   "permissions": [
     "contextMenus",
     "storage",
-    "tabs"
+    "tabs",
+    "activeTab"
   ],
   "host_permissions": [
     "*://*.google.com/maps/*",
-    "*://*.google.com/maps"
+    "*://*.google.com/maps",
+    "*://*.apple.com/*"
   ],
   "background": {
     "service_worker": "background.js"
