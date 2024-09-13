@@ -33,7 +33,7 @@ This forked version is **not** available on the Chrome Web Store. To use the ext
      ```
 
    - **Or Download as ZIP:**
-     - Go to the [GitHub repository](https://github.com/yourusername/open-in-Apple-Maps-fork).
+     - Go to the [GitHub repository](https://github.com/mvicari/open-in-Apple-Maps/).
      - Click the "Code" button and select "Download ZIP".
      - Extract the downloaded ZIP file to a desired location on your computer.
 
